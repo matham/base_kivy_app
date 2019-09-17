@@ -62,7 +62,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip virtualenv wheel setuptools
         python -m pip install kivy_deps.angle kivy_deps.sdl2 kivy_deps.glew https://kivy.org/downloads/ci/win/kivy/Kivy-2.0.0.dev0-cp37-cp37m-win_amd64.whl trio docutils
-        python3 -m pip install -e .[dev]
+        python -m pip install -e .[dev]
     - name: Test with pytest
       env:
         KIVY_GL_BACKEND: angle_sdl2

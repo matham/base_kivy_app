@@ -13,6 +13,7 @@
 import os
 import sphinx_rtd_theme
 import kivy  # this adds KIVY_DOC_INCLUDE to env
+import base_kivy_app
 from base_kivy_app.config import create_doc_listener
 
 
