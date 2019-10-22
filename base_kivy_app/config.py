@@ -355,15 +355,24 @@ ProjectApp.get_config_classes(), project_name))
     # get the docs for the props
     docs = get_config_attrs_doc(classes, filename)
 
-    header = '{} Config'.format(package.__name__)
-    lines = [header, '=' * len(header), '']
+    header = '{} Config'.format(package.__name__.upper())
+    lines = [
+        header, '=' * len(header), '',
+        'The following are the configuration options provided by the app. '
+        'It can be configured by changing appropriate values in the '
+        '``config.yaml`` file. The options default to the default value '
+        'in the classes configurable by these options.', '']
 
     for name, attrs in sorted(docs.items(), key=operator.itemgetter(0)):
-        lines.append(':{}:'.format(name))
+        lines.append(name)
+        lines.append('-' * len(name))
         lines.append('')
         for attr, (default, doc) in sorted(attrs.items(),
                                            key=operator.itemgetter(0)):
-            lines.append('`{}`: {}'.format(attr, default))
+            if isinstance(default, str):
+                lines.append('`{}`: "{}"'.format(attr, default))
+            else:
+                lines.append('`{}`: {}'.format(attr, default))
             while doc and not doc[-1].strip():
                 del doc[-1]
 
