@@ -6,6 +6,7 @@ The base App class.
 
 import os
 import inspect
+import traceback
 import sys
 import json
 import logging
@@ -35,11 +36,40 @@ from base_kivy_app.config import populate_dump_config, apply_config
 if not os.environ.get('KIVY_DOC_INCLUDE', None):
     Clock.max_iteration = 20
 
-__all__ = ('BaseKivyApp', 'run_app', 'app_error', 'app_error_async')
+__all__ = ('BaseKivyApp', 'run_app', 'app_error', 'app_error_async',
+           'report_exception_in_app')
+
+
+def report_exception_in_app(e, exc_info=None, threaded=False):
+    """Takes the error and reports it to :meth:`BaseKivyApp.handle_exception`.
+
+    :param e: The error
+    :param exc_info: If not None, the return value of ``sys.exc_info()`` or
+        a stringified version of it.
+    :param threaded: If the app should be called in a thread safe manner,
+        e.g. if called from another thread.
+    """
+    def report_exception(*largs):
+        if App.get_running_app() is not None:
+            App.get_running_app().handle_exception(
+                e, exc_info=sys.exc_info())
+        else:
+            logging.error(e)
+            if exc_info is not None:
+                if isinstance(exc_info, str):
+                    logging.error(exc_info)
+                else:
+                    logging.error(
+                        ''.join(traceback.format_exception(*exc_info)))
+
+    if threaded:
+        Clock.schedule_once(report_exception)
+    else:
+        report_exception()
 
 
 def app_error(app_error_func, threaded=False):
-    '''A decorator which wraps the function in `try...except` and calls
+    """A decorator which wraps the function in `try...except` and calls
     :meth:`BaseKivyApp.handle_exception` when a exception is raised.
 
     E.g.::
@@ -47,29 +77,20 @@ def app_error(app_error_func, threaded=False):
         @app_error
         def do_something():
             do_something
-    '''
+    """
     @wraps(app_error_func)
     def safe_func(*largs, **kwargs):
         try:
             return app_error_func(*largs, **kwargs)
         except Exception as e:
-            def report_exception(*largs):
-                if App.get_running_app() is not None:
-                    App.get_running_app().handle_exception(
-                        e, exc_info=sys.exc_info())
-                else:
-                    logging.exception(e)
-
-            if threaded:
-                Clock.schedule_once(report_exception)
-            else:
-                report_exception()
+            report_exception_in_app(
+                e, exc_info=sys.exc_info(), threaded=threaded)
 
     return safe_func
 
 
 def app_error_async(app_error_func, threaded=False):
-    '''A decorator which wraps the async function in `try...except` and calls
+    """A decorator which wraps the async function in `try...except` and calls
     :meth:`BaseKivyApp.handle_exception` when a exception is raised.
 
     E.g.::
@@ -77,23 +98,14 @@ def app_error_async(app_error_func, threaded=False):
         @app_error
         async def do_something():
             do_something
-    '''
+    """
     @wraps(app_error_func)
     async def safe_func(*largs, **kwargs):
         try:
             return await app_error_func(*largs, **kwargs)
         except Exception as e:
-            def report_exception(*largs):
-                if App.get_running_app() is not None:
-                    App.get_running_app().handle_exception(
-                        e, exc_info=sys.exc_info())
-                else:
-                    logging.exception(e)
-
-            if threaded:
-                Clock.schedule_once(report_exception)
-            else:
-                report_exception()
+            report_exception_in_app(
+                e, exc_info=sys.exc_info(), threaded=threaded)
 
     return safe_func
 
@@ -184,6 +196,9 @@ class BaseKivyApp(App):
         if self._close_popup is not None:
             self._close_popup.text = self._close_message
 
+        self.init_config()
+
+    def init_config(self):
         parser = ConfigParser()
 
         if not parser.has_section('App'):
@@ -266,11 +281,18 @@ class BaseKivyApp(App):
                 If not None, the return value of ``sys.exc_info()``. It is used
                 to log the stack trace.
         '''
+
         if isinstance(exc_info, str):
             self.get_logger().error(msg)
             self.get_logger().error(exc_info)
         elif level in ('error', 'exception'):
-            self.get_logger().error(msg, exc_info=exc_info)
+            self.get_logger().error(msg)
+            if exc_info is not None:
+                if isinstance(exc_info, str):
+                    self.get_logger().error(exc_info)
+                else:
+                    self.get_logger().error(
+                        ''.join(traceback.format_exception(*exc_info)))
         else:
             getattr(self.get_logger(), level)(msg)
 
