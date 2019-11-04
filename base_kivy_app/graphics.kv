@@ -565,6 +565,16 @@
 <ThemedLabel@FlatLabel>:
     flat_color: app.theme.text_primary
 
+<ThemedSizedLabel@FlatLabel>:
+    size: self.texture_size
+    size_hint: None, None
+    flat_color: app.theme.text_primary
+
+<LightThemedButton@FlatButton>:
+    scale_down_color: True
+    flat_color: app.theme.text_primary
+    flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
+
 <LightThemedToggleButton@FlatToggleButton>:
     scale_down_color: True
     flat_color: app.theme.text_primary

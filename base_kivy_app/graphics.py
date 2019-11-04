@@ -31,12 +31,13 @@ from kivy.factory import Factory
 from kivy.compat import string_types
 from kivy.uix.dropdown import DropDown
 from kivy.uix.textinput import TextInput
+from kivy.uix.slider import Slider
 
 from base_kivy_app.utils import pretty_time
 
 __all__ = (
     'EventFocusBehavior', 'BufferImage', 'ErrorIndicatorBase', 'TimeLineSlice',
-    'TimeLine', 'AutoSizedSpinner', 'EmptyDropDown', 'save_image')
+    'TimeLine', 'AutoSizedSpinner', 'EmptyDropDown')
 
 
 Builder.load_file(join(dirname(__file__), 'graphics.kv'))
@@ -593,31 +594,6 @@ class BufferImage(Scatter):
         self.update_img(self.img)
 
 
-def save_image(fname, img, codec='bmp', pix_fmt='bgr24', lib_opts={}):
-    from ffpyplayer.pic import SWScale
-    from ffpyplayer.tools import get_supported_pixfmts, get_format_codec
-    from ffpyplayer.writer import MediaWriter
-
-    fmt = img.get_pixel_format()
-    w, h = img.get_size()
-
-    if not codec:
-        codec = get_format_codec(fname)
-        ofmt = get_supported_pixfmts(codec, fmt)[0]
-    else:
-        ofmt = get_supported_pixfmts(codec, pix_fmt or fmt)[0]
-    if ofmt != fmt:
-        sws = SWScale(w, h, fmt, ofmt=ofmt)
-        img = sws.scale(img)
-        fmt = ofmt
-
-    out_opts = {'pix_fmt_in': fmt, 'width_in': w, 'height_in': h,
-                'frame_rate': (30, 1), 'codec': codec}
-    writer = MediaWriter(fname, [out_opts], lib_opts=lib_opts)
-    writer.write_frame(img=img, pts=0, stream=0)
-    writer.close()
-
-
 class ErrorIndicatorBehavior(ButtonBehavior):
     '''A Button based class that visualizes and notifies on the current error
     status.
@@ -1071,6 +1047,20 @@ class TimeSliceSelection(Widget):
         else:
             self.high_val = min(
                 max(self.low_val, self.high_val + diff), self.max)
+
+
+class FlatSlider(Slider):
+
+    __events__ = ('on_release', )
+
+    def on_release(self, *largs):
+        pass
+
+    def on_touch_up(self, touch):
+        if super(FlatSlider, self).on_touch_up(touch):
+            if touch.grab_current == self:
+                self.dispatch('on_release', self)
+            return True
 
 
 Factory.register('AutoSizedSpinnerBehavior', cls=AutoSizedSpinnerBehavior)
