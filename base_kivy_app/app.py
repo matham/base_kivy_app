@@ -52,7 +52,7 @@ def report_exception_in_app(e, exc_info=None, threaded=False):
     def report_exception(*largs):
         if App.get_running_app() is not None:
             App.get_running_app().handle_exception(
-                e, exc_info=sys.exc_info())
+                e, exc_info=exc_info or sys.exc_info())
         else:
             logging.error(e)
             if exc_info is not None:
