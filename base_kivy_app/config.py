@@ -195,14 +195,11 @@ def apply_config(opts, classes):
         if not obj:
             continue
 
-        if hasattr(obj, 'apply_settings'):
-            obj.apply_settings(opts[name])
+        if hasattr(obj, 'apply_config_settings'):
+            obj.apply_config_settings(opts[name])
         else:
-            if hasattr(obj, 'apply_settings_attrs'):
-                obj.apply_settings_attrs(opts[name])
-            else:
-                for k, v in opts[name].items():
-                    setattr(obj, k, v)
+            for k, v in opts[name].items():
+                setattr(obj, k, v)
 
 
 def _whitesp_sub(m):

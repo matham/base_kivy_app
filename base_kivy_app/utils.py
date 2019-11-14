@@ -11,7 +11,8 @@ from io import StringIO
 from ruamel.yaml import YAML, SafeRepresenter
 
 __all__ = ('pretty_time', 'pretty_space', 'json_dumps',
-           'json_loads', 'ColorTheme', 'apply_args_post')
+           'json_loads', 'ColorTheme', 'apply_args_post', 'yaml_dumps',
+           'yaml_loads')
 
 SafeRepresenter.add_representer(ObservableList, SafeRepresenter.represent_list)
 SafeRepresenter.add_representer(ObservableDict, SafeRepresenter.represent_dict)

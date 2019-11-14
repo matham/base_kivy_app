@@ -411,7 +411,7 @@ class BufferImage(Scatter):
     _last_h = 0
     '''The width of the screen region available to display the image. '''
 
-    image_size =  ObjectProperty((0, 0))
+    image_size = ObjectProperty((0, 0))
     '''The size of the last image.
     '''
 
