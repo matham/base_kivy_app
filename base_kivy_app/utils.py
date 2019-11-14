@@ -41,9 +41,9 @@ def pretty_time(seconds):
     if h:
         return '{0:d}:{1:d}:{2:d}.{3:d}'.format(h, m, s, ms)
     elif m:
-        return '{0:d}:{1:d}.{2:d}'.format(m, s, ms)
+        return '0:{0:d}:{1:d}.{2:d}'.format(m, s, ms)
     else:
-        return '{0:d}.{1:d}'.format(s, ms)
+        return '0:0:{0:d}.{1:d}'.format(s, ms)
 
 
 def pretty_space(space, is_rate=False):
