@@ -10,7 +10,6 @@ Dependencies
     * Python 3.7+
     * Kivy Master `E.g. Windows nightly wheels <https://kivy.org/docs/installation/installation-windows.html#nightly-wheel-installation>`_
     * If the video/image widget is used, then ffpyplayer. E.g. `pip install ffpyplayer`.
-    * If using the default filebrowser in the , then `kivy_garden.filebrowser`. E.g. `python -m pip install kivy_garden.filebrowser --extra-index-url https://kivy-garden.github.io/simple/`.
 
 BaseKivyApp
 ------------

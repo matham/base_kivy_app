@@ -33,13 +33,17 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     packages=find_packages(),
-    install_requires=['ruamel.yaml', 'kivy'],
+    install_requires=[
+        'ruamel.yaml', 'kivy',
+        'kivy_garden.filebrowser @ '
+        'https://github.com/kivy-garden/filebrowser/archive/master.zip'
+        '#egg=kivy_garden.filebrowser'],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
                 'coveralls'],
     },
     package_data={
-        'base_kivy_app': 
+        'base_kivy_app':
             ['media/*', '*.kv', 'media/flat_icons/*']},
     project_urls={
         'Bug Reports': URL + '/issues',
