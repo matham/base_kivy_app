@@ -83,8 +83,16 @@ def app_error(app_error_func, threaded=False):
         try:
             return app_error_func(*largs, **kwargs)
         except Exception as e:
-            report_exception_in_app(
-                e, exc_info=sys.exc_info(), threaded=threaded)
+            exc_info = sys.exc_info()
+            stack = traceback.extract_stack()
+            tb = traceback.extract_tb(exc_info[2])
+            full_tb = stack[:-1] + tb
+            exc_line = traceback.format_exception_only(*exc_info[:2])
+
+            err = 'Traceback (most recent call last):'
+            err += "".join(traceback.format_list(full_tb))
+            err += "".join(exc_line)
+            report_exception_in_app(e, exc_info=err, threaded=threaded)
 
     return safe_func
 
@@ -104,8 +112,16 @@ def app_error_async(app_error_func, threaded=False):
         try:
             return await app_error_func(*largs, **kwargs)
         except Exception as e:
-            report_exception_in_app(
-                e, exc_info=sys.exc_info(), threaded=threaded)
+            exc_info = sys.exc_info()
+            stack = traceback.extract_stack()
+            tb = traceback.extract_tb(exc_info[2])
+            full_tb = stack[:-1] + tb
+            exc_line = traceback.format_exception_only(*exc_info[:2])
+
+            err = 'Traceback (most recent call last):'
+            err += "".join(traceback.format_list(full_tb))
+            err += "".join(exc_line)
+            report_exception_in_app(e, exc_info=err, threaded=threaded)
 
     return safe_func
 
