@@ -146,6 +146,7 @@ class FollowingLabel(Label):
             else:
                 self.y = wtop
 
+
 Builder.load_string('''
 <FollowingLabel>:
     size_hint: None, None
