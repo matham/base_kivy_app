@@ -185,7 +185,7 @@ class BaseKivyApp(App):
         '''
         return {'app': cls}
 
-    def get_app_config_classes(self):
+    def get_config_instances(self):
         return {'app': self}
 
     def __init__(self, **kw):
@@ -249,20 +249,17 @@ class BaseKivyApp(App):
         return join(dirname(inspect.getfile(self.__class__)), 'data')
 
     def load_app_settings_from_file(self):
-        classes = self.get_app_config_classes()
         self.app_settings = populate_dump_config(
-            self.ensure_config_file(self.json_config_path), classes)
-
-        apply_config({
-            'app': self.app_settings['app']}, self.get_app_config_classes())
+            self.ensure_config_file(self.json_config_path), self)
+        apply_config(self, self.app_settings['app'])
 
     def apply_app_settings(self):
-        apply_config(self.app_settings, self.get_app_config_classes())
+        apply_config(self, self.app_settings)
 
     def dump_app_settings_to_file(self):
-        classes = self.get_app_config_classes()
-        populate_dump_config(self.ensure_config_file(self.json_config_path),
-                             classes, from_file=False)
+        populate_dump_config(
+            self.ensure_config_file(self.json_config_path),
+            self, from_file=False)
 
     def build(self, root=None):
         if root is not None and self.inspect:

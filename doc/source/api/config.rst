@@ -1,5 +1,5 @@
-.. _base_kivy_app-config-api:
+.. _config-api:
 
-.. automodule:: cplcom.base_kivy_app
+.. automodule:: base_kivy_app.config
    :members:
    :show-inheritance:

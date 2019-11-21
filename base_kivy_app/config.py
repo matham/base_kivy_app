@@ -1,4 +1,4 @@
-'''Config
+"""Config
 ==========
 
 Configuration used across kivy apps.
@@ -40,10 +40,11 @@ Then, in the sphinx conf.py file do::
     def setup(app):
         import package
         from package import MyApp
-        fname = os.environ.get('BASEKIVYAPP_CONFIG_DOC_PATH', 'config_attrs.json')
+        fname = os.environ.get(
+            'BASEKIVYAPP_CONFIG_DOC_PATH', 'config_attrs.json')
         create_doc_listener(app, package, fname)
         if MyApp.get_running_app() is not None:
-            classes = MyApp.get_running_app().get_app_config_classes()
+            classes = MyApp.get_running_app().get_config_instances()
         else:
             classes = MyApp.get_config_classes()
 
@@ -60,15 +61,15 @@ this file will be converted to html containing all the config tokens.
 You should similarly run doc generation for all packages the your package
 relies on so you get all their config options in ``config_attrs.json``
 so they can be included in the docs.
-'''
+"""
 
 import operator
 from inspect import isclass
-from os.path import join, dirname
+from os.path import join
 import re
 from importlib import import_module
 import json
-from kivy.compat import PY2, string_types
+from kivy.properties import Property
 from base_kivy_app.utils import yaml_loads, yaml_dumps
 
 __all__ = ('populate_config', 'apply_config', 'dump_config',
@@ -98,7 +99,7 @@ def _get_settings_attrs(cls):
     attrs = []
     for c in [cls] + list(_get_bases(cls)):
         if '__settings_attrs__' not in c.__dict__:
-                continue
+            continue
 
         for attr in c.__settings_attrs__:
             if attr in attrs:
@@ -110,7 +111,7 @@ def _get_settings_attrs(cls):
     return attrs
 
 
-def _get_classses_settings_attrs(cls):
+def _get_classes_settings_attrs(cls):
     """Returns a dictionary of parent classes that maps class names to a dict
     of properties and their info.
 
@@ -120,7 +121,7 @@ def _get_classses_settings_attrs(cls):
     attrs = {}
     for c in [cls] + list(_get_bases(cls)):
         if '__settings_attrs__' not in c.__dict__ or not c.__settings_attrs__:
-                continue
+            continue
 
         for attr in c.__settings_attrs__:
             if not hasattr(cls, attr):
@@ -132,30 +133,71 @@ def _get_classses_settings_attrs(cls):
     return attrs
 
 
-def _get_config_dict(name, cls, opts):
-    obj = cls
+def fill_config_from_declared_objects(root_obj, classes, config, old_config):
+    for name, obj in classes.items():
+        if isinstance(obj, dict):
+            values = config[name] = {}
+            old_config_vals = old_config.get(name, {})
+            for k, o in obj.items():
+                values[k] = get_obj_config(o, old_config_vals.get(k, {}))
+        elif isinstance(obj, (list, tuple)):
+            values = config[name] = []
+            old_config_vals = old_config.get(name, [])
+            for i, o in enumerate(obj):
+                if i < len(old_config_vals):
+                    values.append(get_obj_config(o, old_config_vals[i]))
+                else:
+                    values.append(get_obj_config(o, {}))
+        else:
+            config[name] = get_obj_config(
+                obj, old_config.get(name, {}), obj is root_obj)
 
-    opt = opts.get(name, {})
-    new_vals = {}
+
+def get_obj_config(obj, old_config, get_props_only=False):
+    config = {}
+
+    if not get_props_only:
+        objects = None
+        # get all the configurable classes used by the obj
+        if isclass(obj):
+            if hasattr(obj, 'get_config_classes'):
+                objects = obj.get_config_classes()
+        else:
+            if hasattr(obj, 'get_config_instances'):
+                objects = obj.get_config_instances()
+
+        if objects is not None:
+            fill_config_from_declared_objects(obj, objects, config, old_config)
+            # have we already processed this objects config props?
+            if obj in list(objects.values()):
+                return config
+
     if isclass(obj):
         for attr in _get_settings_attrs(obj):
-            new_vals[attr] = opt.get(
-                attr, getattr(obj, attr).defaultvalue)
+            prop_val = getattr(obj, attr)
+            if isinstance(prop_val, Property):
+                val = prop_val.defaultvalue
+            else:
+                val = prop_val
+            config[attr] = old_config.get(attr, val)
     else:
+        props = _get_settings_attrs(obj.__class__)
         if hasattr(obj, 'get_settings_attrs'):
-            for k, v in obj.get_settings_attrs(
-                    _get_settings_attrs(obj.__class__)).items():
-                new_vals[k] = opt.get(k, v)
+            for k, v in obj.get_settings_attrs(props).items():
+                config[k] = old_config.get(k, v)
         else:
-            for attr in _get_settings_attrs(obj.__class__):
-                new_vals[attr] = opt.get(attr, getattr(obj, attr))
-    return new_vals
+            for attr in props:
+                config[attr] = old_config.get(attr, getattr(obj, attr))
+    return config
 
 
-def populate_config(filename, classes, from_file=True):
-    '''Reads the config file and loads all the config data for the classes
-    listed in `classes`.
-    '''
+def populate_config(filename, obj, from_file=True):
+    """Reads the config file if ``from_file`` and loads all the config data for
+    the ``obj`` either from the config file, or from the object if it's not
+    in the config file (i.e. we provide the default value).
+
+    The config data is returned as a dict.
+    """
     opts = {}
     if from_file:
         try:
@@ -166,55 +208,65 @@ def populate_config(filename, classes, from_file=True):
         except IOError:
             pass
 
-    new_opts = {}
-    for name, cls in classes.items():
-        if isinstance(cls, dict):
-            new_opts[name] = {
-                k: _get_config_dict(k, c, opts.get(name, {})) for
-                k, c in cls.items()}
-        elif isinstance(cls, (list, tuple)):
-            new_opts[name] = [_get_config_dict(name, c, opts) for c in cls]
+    return get_obj_config(obj, opts)
+
+
+def apply_config_to_declared_objects(root_obj, classes, config):
+    for name, obj in classes.items():
+        if isinstance(obj, dict):
+            raise NotImplementedError
+        elif isinstance(obj, (list, tuple)):
+            raise NotImplementedError
         else:
-            new_opts[name] = _get_config_dict(name, cls, opts)
-    return new_opts
+            if name in config:
+                apply_config(obj, config[name], obj is root_obj)
 
 
-def apply_config(opts, classes):
-    '''Takes the config data read with :func:`populate_config` and applys
+def apply_config(obj, config, set_props_only=False):
+    """Takes the config data read with :func:`populate_config` and applies
     them to any existing class instances listed in classes.
-    '''
-    for name, cls in classes.items():
-        if name not in opts:
+    """
+    objects = None
+    # get all the configurable classes used by the obj
+    if isclass(obj):
+        if hasattr(obj, 'get_config_classes'):
+            objects = obj.get_config_classes()
+    else:
+        if hasattr(obj, 'get_config_instances'):
+            objects = obj.get_config_instances()
+
+    if not set_props_only and objects is not None:
+        apply_config_to_declared_objects(obj, objects, config)
+        # have we already processed this objects config props?
+        if obj in list(objects.values()):
+            return
+
+    if isclass(obj) or not obj:
+        return
+
+    used_keys = set() if not objects else set(objects.keys())
+    config_values = {k: v for k, v in config.items() if k not in used_keys}
+
+    used_keys = set()
+    if hasattr(obj, 'apply_config_settings'):
+        used_keys = obj.apply_config_settings(config_values)
+
+    for k, v in config_values.items():
+        if k in used_keys:
             continue
-
-        if isclass(cls):
-            continue
-        else:
-            obj = cls
-
-        if not obj:
-            continue
-
-        if hasattr(obj, 'apply_config_settings'):
-            obj.apply_config_settings(opts[name])
-        else:
-            for k, v in opts[name].items():
-                setattr(obj, k, v)
-
-
-def _whitesp_sub(m):
-    return re.sub(config_whitesp_pat, '', m.group(0))
+        setattr(obj, k, v)
 
 
 def dump_config(filename, data):
-    # s = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
-    # s = re.sub(config_list_pat, _whitesp_sub, s)
     with open(filename, 'w') as fh:
         fh.write(yaml_dumps(data))
 
 
-def populate_dump_config(filename, classes, from_file=True):
-    opts = populate_config(filename, classes, from_file=from_file)
+def populate_dump_config(filename, obj, from_file=True):
+    """Similar to :func:`populate_config`, but it also then dumps the config
+    to the file after reading it.
+    """
+    opts = populate_config(filename, obj, from_file=from_file)
     dump_config(filename, opts)
     return opts
 
@@ -231,7 +283,8 @@ def create_doc_listener(sphinx_app, package, filename='config_attrs.json'):
             import package
             create_doc_listener(
                 app, package,
-                os.environ.get('BASEKIVYAPP_CONFIG_DOC_PATH', 'config_attrs.json')
+                os.environ.get(
+                    'BASEKIVYAPP_CONFIG_DOC_PATH', 'config_attrs.json')
             )
 
     where ``package`` is the module for which the docs are generated.
@@ -249,7 +302,7 @@ def create_doc_listener(sphinx_app, package, filename='config_attrs.json'):
         if what == 'class':
             if hasattr(obj, '__settings_attrs__'):
                 # get all the baseclasses of this package of this class
-                for c, attrs in _get_classses_settings_attrs(obj).items():
+                for c, attrs in _get_classes_settings_attrs(obj).items():
                     if not c.startswith(package.__name__):
                         continue
 
@@ -309,7 +362,7 @@ def get_config_attrs_doc(classes, filename='config_attrs.json'):
             continue
 
         # get all the parent classes of the class and their props
-        docs_used[name] = _get_classses_settings_attrs(cls)
+        docs_used[name] = _get_classes_settings_attrs(cls)
         for c in docs_used[name]:
             mod = c.split('.')[0]
             packages[mod] = import_module(mod)
@@ -331,12 +384,12 @@ def get_config_attrs_doc(classes, filename='config_attrs.json'):
 
 
 def write_config_attrs_rst(
-        classes, package, app, exception, filename='config_attrs.json',
+        obj, package, app, exception, filename='config_attrs.json',
         rst_fname=join('source', 'config.rst')):
     """Walks through all the configurable classes of this package
     (should be gotten from
     :meth:`~base_kivy_app.app.BaseKivyApp.get_config_classes` or
-    :meth:`~base_kivy_app.app.BaseKivyApp.get_app_config_classes`) and loads the
+    :meth:`~base_kivy_app.app.BaseKivyApp.get_config_instances`) and loads the
     docs of those properties and generates a rst output file with all the
     tokens.
 
@@ -350,6 +403,10 @@ ProjectApp.get_config_classes(), project_name))
     package.
     """
     # get the docs for the props
+    if isclass(obj):
+        classes = obj.get_config_classes()
+    else:
+        classes = obj.get_config_instances()
     docs = get_config_attrs_doc(classes, filename)
 
     header = '{} Config'.format(package.__name__.upper())
