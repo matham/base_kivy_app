@@ -34,10 +34,7 @@ setup(
     ],
     packages=find_packages(),
     install_requires=[
-        'ruamel.yaml', 'kivy',
-        'kivy_garden.filebrowser @ '
-        'https://github.com/kivy-garden/filebrowser/archive/master.zip'
-        '#egg=kivy_garden.filebrowser'],
+        'ruamel.yaml', 'kivy', 'kivy_garden.filebrowser~=1.1.2'],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
                 'coveralls'],
