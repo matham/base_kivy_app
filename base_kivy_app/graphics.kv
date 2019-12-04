@@ -39,10 +39,12 @@
     dirselect: False
     multiselect: False
     callback: None
+    filename: ''
     FileBrowser:
         id: file_browser
         dirselect: root.dirselect
         multiselect: root.multiselect
+        filename: root.filename
         path: root.target or expanduser('~')
         on_success:
             if self.selection or self.filename: root.dismiss()
@@ -457,6 +459,13 @@
                 on_release:
                     if root.callback: root.callback(False)
                     root.dismiss()
+
+<FlatYesNoPrompt@YesNoPrompt>:
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    text_flat_color: app.theme.text_primary
+    btn_flat_background_color_down: app.theme.primary
+    btn_flat_background_color_normal: app.theme.primary_light
 
 # various button/switch widgets
 <SwitchIcon@ToggleButtonBehavior+LabeledIcon>

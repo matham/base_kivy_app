@@ -72,8 +72,8 @@ import json
 from kivy.properties import Property
 from base_kivy_app.utils import yaml_loads, yaml_dumps
 
-__all__ = ('populate_config', 'apply_config', 'dump_config',
-           'populate_dump_config', 'create_doc_listener',
+__all__ = ('read_config_from_object', 'read_config_from_file', 'apply_config',
+           'dump_config', 'create_doc_listener',
            'get_config_attrs_doc', 'write_config_attrs_rst')
 
 config_list_pat = re.compile(
@@ -133,27 +133,20 @@ def _get_classes_settings_attrs(cls):
     return attrs
 
 
-def fill_config_from_declared_objects(root_obj, classes, config, old_config):
+def fill_config_from_declared_objects(root_obj, classes, config):
     for name, obj in classes.items():
         if isinstance(obj, dict):
-            values = config[name] = {}
-            old_config_vals = old_config.get(name, {})
-            for k, o in obj.items():
-                values[k] = get_obj_config(o, old_config_vals.get(k, {}))
+            config[name] = {
+                k: read_config_from_object(o, o is root_obj)
+                for k, o in obj.items()}
         elif isinstance(obj, (list, tuple)):
-            values = config[name] = []
-            old_config_vals = old_config.get(name, [])
-            for i, o in enumerate(obj):
-                if i < len(old_config_vals):
-                    values.append(get_obj_config(o, old_config_vals[i]))
-                else:
-                    values.append(get_obj_config(o, {}))
+            config[name] = [
+                read_config_from_object(o, o is root_obj) for o in obj]
         else:
-            config[name] = get_obj_config(
-                obj, old_config.get(name, {}), obj is root_obj)
+            config[name] = read_config_from_object(obj, obj is root_obj)
 
 
-def get_obj_config(obj, old_config, get_props_only=False):
+def read_config_from_object(obj, get_props_only=False):
     config = {}
 
     if not get_props_only:
@@ -167,7 +160,7 @@ def get_obj_config(obj, old_config, get_props_only=False):
                 objects = obj.get_config_instances()
 
         if objects is not None:
-            fill_config_from_declared_objects(obj, objects, config, old_config)
+            fill_config_from_declared_objects(obj, objects, config)
             # have we already processed this objects config props?
             if obj in list(objects.values()):
                 return config
@@ -176,54 +169,47 @@ def get_obj_config(obj, old_config, get_props_only=False):
         for attr in _get_settings_attrs(obj):
             prop_val = getattr(obj, attr)
             if isinstance(prop_val, Property):
-                val = prop_val.defaultvalue
+                config[attr] = prop_val.defaultvalue
             else:
-                val = prop_val
-            config[attr] = old_config.get(attr, val)
+                config[attr] = prop_val
     else:
         props = _get_settings_attrs(obj.__class__)
-        if hasattr(obj, 'get_settings_attrs'):
-            for k, v in obj.get_settings_attrs(props).items():
-                config[k] = old_config.get(k, v)
-        else:
-            for attr in props:
-                config[attr] = old_config.get(attr, getattr(obj, attr))
+        if hasattr(obj, 'get_config_properties'):
+            config.update(obj.get_config_properties())
+
+        for attr in props:
+            if attr not in config:
+                config[attr] = getattr(obj, attr)
     return config
 
 
-def populate_config(filename, obj, from_file=True):
-    """Reads the config file if ``from_file`` and loads all the config data for
-    the ``obj`` either from the config file, or from the object if it's not
-    in the config file (i.e. we provide the default value).
+def read_config_from_file(filename):
+    """Reads the config file and loads all the config data.
 
-    The config data is returned as a dict.
+    The config data is returned as a dict. If there's an error, an empty dict
+    is returned.
     """
-    opts = {}
-    if from_file:
-        try:
-            with open(filename) as fh:
-                opts = yaml_loads(fh.read())
-            if opts is None:
-                opts = {}
-        except IOError:
-            pass
-
-    return get_obj_config(obj, opts)
+    try:
+        with open(filename) as fh:
+            opts = yaml_loads(fh.read())
+        if opts is None:
+            opts = {}
+        return opts
+    except IOError:
+        return {}
 
 
 def apply_config_to_declared_objects(root_obj, classes, config):
     for name, obj in classes.items():
-        if isinstance(obj, dict):
-            raise NotImplementedError
-        elif isinstance(obj, (list, tuple)):
-            raise NotImplementedError
-        else:
-            if name in config:
+        if name in config:
+            if not hasattr(root_obj, 'apply_config_instance') or not \
+                    root_obj.apply_config_instance(name, obj, config[name]):
                 apply_config(obj, config[name], obj is root_obj)
 
 
 def apply_config(obj, config, set_props_only=False):
-    """Takes the config data read with :func:`populate_config` and applies
+    """Takes the config data read with :func:`read_config_from_object`
+    or :func:`read_config_from_file` and applies
     them to any existing class instances listed in classes.
     """
     objects = None
@@ -248,8 +234,8 @@ def apply_config(obj, config, set_props_only=False):
     config_values = {k: v for k, v in config.items() if k not in used_keys}
 
     used_keys = set()
-    if hasattr(obj, 'apply_config_settings'):
-        used_keys = obj.apply_config_settings(config_values)
+    if hasattr(obj, 'apply_config_properties'):
+        used_keys = obj.apply_config_properties(config_values)
 
     for k, v in config_values.items():
         if k in used_keys:
@@ -260,15 +246,6 @@ def apply_config(obj, config, set_props_only=False):
 def dump_config(filename, data):
     with open(filename, 'w') as fh:
         fh.write(yaml_dumps(data))
-
-
-def populate_dump_config(filename, obj, from_file=True):
-    """Similar to :func:`populate_config`, but it also then dumps the config
-    to the file after reading it.
-    """
-    opts = populate_config(filename, obj, from_file=from_file)
-    dump_config(filename, opts)
-    return opts
 
 
 def create_doc_listener(sphinx_app, package, filename='config_attrs.json'):

@@ -32,7 +32,8 @@ from kivy.clock import Clock
 
 import base_kivy_app.graphics  # required to load kv
 from base_kivy_app.utils import ColorTheme
-from base_kivy_app.config import populate_dump_config, apply_config
+from base_kivy_app.config import apply_config, read_config_from_file, \
+    read_config_from_object, dump_config
 if not os.environ.get('KIVY_DOC_INCLUDE', None):
     Clock.max_iteration = 20
 
@@ -249,17 +250,17 @@ class BaseKivyApp(App):
         return join(dirname(inspect.getfile(self.__class__)), 'data')
 
     def load_app_settings_from_file(self):
-        self.app_settings = populate_dump_config(
-            self.ensure_config_file(self.json_config_path), self)
+        self.app_settings = read_config_from_file(
+            self.ensure_config_file(self.json_config_path))
         apply_config(self, self.app_settings['app'])
 
     def apply_app_settings(self):
         apply_config(self, self.app_settings)
 
     def dump_app_settings_to_file(self):
-        populate_dump_config(
+        dump_config(
             self.ensure_config_file(self.json_config_path),
-            self, from_file=False)
+            read_config_from_object(self))
 
     def build(self, root=None):
         if root is not None and self.inspect:
