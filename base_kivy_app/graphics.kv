@@ -44,7 +44,7 @@
         id: file_browser
         dirselect: root.dirselect
         multiselect: root.multiselect
-        filename: root.filename
+        selection: [root.filename] if root.filename else []
         path: root.target or expanduser('~')
         on_success:
             if self.selection or self.filename: root.dismiss()
