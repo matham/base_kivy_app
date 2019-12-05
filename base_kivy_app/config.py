@@ -7,7 +7,7 @@ Overview
 ---------
 
 Configuration works as follows. Each class that has configuration attributes
-must list these attributes in a list in the class ``__settings_attrs__``
+must list these attributes in a list in the class ``__config_props__``
 attribute. Each of the properties listed there must be "Kivy" properties of
 that class.
 
@@ -69,6 +69,7 @@ from os.path import join
 import re
 from importlib import import_module
 import json
+from collections import deque
 from kivy.properties import Property
 from base_kivy_app.utils import yaml_loads, yaml_dumps
 
@@ -85,9 +86,9 @@ def _get_bases(cls):
     for base in cls.__bases__:
         if base.__name__ == 'object':
             break
-        yield base
         for cbase in _get_bases(base):
             yield cbase
+        yield base
 
 
 def _get_settings_attrs(cls):
@@ -98,10 +99,10 @@ def _get_settings_attrs(cls):
     """
     attrs = []
     for c in [cls] + list(_get_bases(cls)):
-        if '__settings_attrs__' not in c.__dict__:
+        if '__config_props__' not in c.__dict__:
             continue
 
-        for attr in c.__settings_attrs__:
+        for attr in c.__config_props__:
             if attr in attrs:
                 continue
             if not hasattr(cls, attr):
@@ -120,16 +121,16 @@ def _get_classes_settings_attrs(cls):
     """
     attrs = {}
     for c in [cls] + list(_get_bases(cls)):
-        if '__settings_attrs__' not in c.__dict__ or not c.__settings_attrs__:
+        if '__config_props__' not in c.__dict__ or not c.__config_props__:
             continue
 
-        for attr in c.__settings_attrs__:
+        for attr in c.__config_props__:
             if not hasattr(cls, attr):
                 raise Exception('Missing attribute <{}> in <{}>'.
                                 format(attr, cls.__name__))
         attrs['{}.{}'.format(c.__module__, c.__name__)] = {
             attr: [getattr(c, attr).defaultvalue, None]
-            for attr in c.__settings_attrs__}
+            for attr in c.__config_props__}
     return attrs
 
 
@@ -249,7 +250,7 @@ def dump_config(filename, data):
 
 
 def create_doc_listener(sphinx_app, package, filename='config_attrs.json'):
-    """Creates a listener for the ``__settings_attrs__`` attributes and dumps
+    """Creates a listener for the ``__config_props__`` attributes and dumps
     the docs of any props listed to ``filename``. If the file
     already exists, it extends it with new data and overwrites any exiting
     properties that we see again in this run.
@@ -277,7 +278,7 @@ def create_doc_listener(sphinx_app, package, filename='config_attrs.json'):
             return
 
         if what == 'class':
-            if hasattr(obj, '__settings_attrs__'):
+            if hasattr(obj, '__config_props__'):
                 # get all the baseclasses of this package of this class
                 for c, attrs in _get_classes_settings_attrs(obj).items():
                     if not c.startswith(package.__name__):
@@ -311,53 +312,70 @@ def create_doc_listener(sphinx_app, package, filename='config_attrs.json'):
     sphinx_app.connect('build-finished', dump_config_attrs_doc)
 
 
-def get_config_attrs_doc(classes, filename='config_attrs.json'):
+def walk_config_classes_flat(obj):
+    classes_flat = []  # stores all the configurable classes
+    stack = deque([(-1, '', obj)])
+
+    while stack:
+        level, name, obj = stack.popleft()
+        # now we "visited" obj
+        classes_flat.append((level, name, obj, {}, {}))
+
+        children = {}
+        if isclass(obj):
+            if hasattr(obj, 'get_config_classes'):
+                children = obj.get_config_classes()
+        else:
+            if hasattr(obj, 'get_config_instances'):
+                children = obj.get_config_instances()
+
+        for child_name, child_obj in sorted(
+                children.items(), key=lambda x: x[0]):
+            if obj is child_obj:
+                continue
+
+            if isinstance(child_obj, dict):
+                for k, o in child_obj.items():
+                    stack.appendleft((
+                        level + 1, '{} --- {}'.format(child_name, k), o))
+            elif isinstance(child_obj, (list, tuple)):
+                for i, o in enumerate(child_obj):
+                    stack.appendleft((
+                        level + 1, '{} --- {}'.format(child_name, i), o))
+            else:
+                stack.appendleft((level + 1, child_name, child_obj))
+
+    assert len(classes_flat) >= 1
+    return classes_flat
+
+
+def get_config_attrs_doc(obj, filename='config_attrs.json'):
     """Objects is a dict of object (class) paths and keys are the names of the
     config attributes of the class.
     """
-    # names of actual classes used
-    docs_used = {}
-    # mapping from module names to module instances
-    packages = {}
-    # dict mapping class name to the actual class
-    flat_clsses = {}
-    for name, cls in classes.items():
-        if isinstance(cls, (list, tuple)):
-            for i, c in enumerate(cls):
-                flat_clsses['{} - {}'.format(name, i)] = c
-        elif isinstance(cls, dict):
-            for k, c in cls.items():
-                flat_clsses['{} - {}'.format(name, k)] = c
-        else:
-            flat_clsses[name] = cls
+    classes_flat = walk_config_classes_flat(obj)
 
     # get the modules associated with each of the classes
-    for name, cls in flat_clsses.items():
-        if not isclass(cls):
-            cls = cls.__class__
+    for _, _, obj, classes_props, _ in classes_flat:
+        cls = obj if isclass(obj) else obj.__class__
         if not _get_settings_attrs(cls):
             continue
 
         # get all the parent classes of the class and their props
-        docs_used[name] = _get_classes_settings_attrs(cls)
-        for c in docs_used[name]:
-            mod = c.split('.')[0]
-            packages[mod] = import_module(mod)
+        classes_props.update(_get_classes_settings_attrs(cls))
 
     # get the saved docs
     with open(filename) as fh:
         docs = json.load(fh)
 
     # mapping of class name to a mapping of class props to their docs
-    docs_final = {}
-    for name, classes_attrs in docs_used.items():
-        docs_final[name] = {}
-        for cls, attrs in classes_attrs.items():
+    for level, name, obj, classes_props, props_docs in classes_flat:
+        for cls, props in classes_props.items():
             cls_docs = docs.get(cls, {})
-            for attr in attrs:
-                attrs[attr][1] = cls_docs.get(attr, [])
-            docs_final[name].update(attrs)
-    return docs_final
+            for prop in props:
+                props[prop][1] = cls_docs.get(prop, [])
+                props_docs[prop] = props[prop]
+    return classes_flat
 
 
 def write_config_attrs_rst(
@@ -379,12 +397,12 @@ ProjectApp.get_config_classes(), project_name))
     where project_name is the project module and ProjectApp is the App of the
     package.
     """
+    headings = [
+        '-', '`', ':', "'", '"', '~', '^', '_', '*', '+', '#', '<', '>']
+    n = len(headings) - 1
+
     # get the docs for the props
-    if isclass(obj):
-        classes = obj.get_config_classes()
-    else:
-        classes = obj.get_config_instances()
-    docs = get_config_attrs_doc(classes, filename)
+    classes_flat = get_config_attrs_doc(obj, filename)
 
     header = '{} Config'.format(package.__name__.upper())
     lines = [
@@ -394,16 +412,17 @@ ProjectApp.get_config_classes(), project_name))
         '``config.yaml`` file. The options default to the default value '
         'in the classes configurable by these options.', '']
 
-    for name, attrs in sorted(docs.items(), key=operator.itemgetter(0)):
-        lines.append(name)
-        lines.append('-' * len(name))
-        lines.append('')
-        for attr, (default, doc) in sorted(attrs.items(),
-                                           key=operator.itemgetter(0)):
+    for level, name, _, _, props_docs in classes_flat:
+        if level >= 0:
+            lines.append(name)
+            lines.append(headings[min(level, n)] * len(name))
+            lines.append('')
+        for prop, (default, doc) in sorted(
+                props_docs.items(), key=operator.itemgetter(0)):
             if isinstance(default, str):
-                lines.append('`{}`: "{}"'.format(attr, default))
+                lines.append('`{}`: "{}"'.format(prop, default))
             else:
-                lines.append('`{}`: {}'.format(attr, default))
+                lines.append('`{}`: {}'.format(prop, default))
             while doc and not doc[-1].strip():
                 del doc[-1]
 

@@ -131,7 +131,7 @@ class BaseKivyApp(App):
     '''The base app.
     '''
 
-    __settings_attrs__ = ('inspect', )
+    __config_props__ = ('inspect', )
 
     json_config_path = StringProperty('config.yaml')
     '''The full path to the config file used for the app.
@@ -145,7 +145,7 @@ class BaseKivyApp(App):
 
     The keys in the dict are configuration names for a class and its
     values are dicts whose keys are class attributes names and values are their
-    values. These attributes are the ones listed in ``__settings_attrs__``. See
+    values. These attributes are the ones listed in ``__config_props__``. See
     :mod:`base_kivy_app.config` for how configuration works.
     '''
 
