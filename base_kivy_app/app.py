@@ -191,6 +191,10 @@ class BaseKivyApp(App):
 
     def __init__(self, **kw):
         self.theme = ColorTheme()
+        self.json_config_path = '{}_config.yaml'.format(
+            self.__class__.__name__)
+        self._ini_config_filename = '{}_config.ini'.format(
+            self.__class__.__name__)
         super(BaseKivyApp, self).__init__(**kw)
         resource_add_path(join(dirname(__file__), 'media'))
         resource_add_path(join(dirname(__file__), 'media', 'flat_icons'))
@@ -244,15 +248,13 @@ class BaseKivyApp(App):
             return self._data_path
 
         if hasattr(sys, '_MEIPASS'):
-            if isdir(join(sys._MEIPASS, 'data')):
-                return join(sys._MEIPASS, 'data')
-            return sys._MEIPASS
+            return os.path.abspath(os.path.dirname(sys.executable))
         return join(dirname(inspect.getfile(self.__class__)), 'data')
 
     def load_app_settings_from_file(self):
         self.app_settings = read_config_from_file(
             self.ensure_config_file(self.json_config_path))
-        apply_config(self, self.app_settings['app'])
+        apply_config(self, self.app_settings, set_props_only=True)
 
     def apply_app_settings(self):
         apply_config(self, self.app_settings)
