@@ -37,7 +37,7 @@ from base_kivy_app.utils import pretty_time
 
 __all__ = (
     'EventFocusBehavior', 'BufferImage', 'ErrorIndicatorBase', 'TimeLineSlice',
-    'TimeLine', 'AutoSizedSpinner', 'EmptyDropDown')
+    'TimeLine', 'AutoSizedSpinner', 'EmptyDropDown', 'HighightButtonBehavior')
 
 
 Builder.load_file(join(dirname(__file__), 'graphics.kv'))
