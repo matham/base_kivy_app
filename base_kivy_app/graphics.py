@@ -2,6 +2,7 @@
 ============
 '''
 from os.path import join, dirname
+import math
 from time import perf_counter
 from functools import partial
 from inspect import isclass
@@ -412,6 +413,8 @@ class BufferImage(Scatter):
     _last_h = 0
     '''The width of the screen region available to display the image. '''
 
+    _last_rotation = 0
+
     image_size = ObjectProperty((0, 0))
     '''The size of the last image.
     '''
@@ -527,16 +530,24 @@ class BufferImage(Scatter):
                 'gray': 'luminance', 'bgr24': 'bgr', 'bgra': 'bgra'}[img_fmt]
             update = True
 
-        if update or w != self._last_w or h != self._last_h:
+        if update or w != self._last_w or h != self._last_h or \
+                self.rotation != self._last_rotation:
             if self.scale_to_image:
-                scalew, scaleh = w / float(img_w), h / float(img_h)
+                rotation = self.rotation
+                rot = self.rotation * math.pi / 180
+                rot_w = abs(img_w * math.cos(rot)) + abs(img_h * math.sin(rot))
+                rot_h = abs(img_h * math.cos(rot)) + abs(img_w * math.sin(rot))
+                scalew, scaleh = w / rot_w, h / rot_h
                 scale = min(min(scalew, scaleh), 1)
                 self.transform = Matrix()
+                self.rotation = rotation
                 self.apply_transform(Matrix().scale(scale, scale, 1),
                                      post_multiply=True)
+                self.pos = 0, 0
             self._iw, self._ih = img_w, img_h
             self._last_h = h
             self._last_w = w
+            self._last_rotation = self.rotation
 
         self.img = img
         kivy_ofmt = self._kivy_ofmt
@@ -592,7 +603,14 @@ class BufferImage(Scatter):
         whenever the screen size changes or the last image need to be
         recalculated.
         '''
-        self.update_img(self.img)
+        if self.img is not None:
+            self.update_img(self.img)
+
+    def rotate_right_reposition(self):
+        rotation = self.rotation - 90
+        factor = abs(int(round(rotation / 90))) % 4
+        self.rotation = math.copysign(factor * 90, rotation)
+        self.reload_buffer()
 
 
 class ErrorIndicatorBehavior(ButtonBehavior):
