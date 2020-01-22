@@ -282,6 +282,8 @@ class SpinnerBehavior(AutoSizedSpinnerBehavior):
         if isinstance(cls, string_types):
             cls = Factory.get(cls)
         self._dropdown = cls()
+        self._dropdown.bar_width = '10dp'
+        self._dropdown.scroll_type = ['bars']
         self._dropdown.bind(on_select=self._on_dropdown_select)
         self._dropdown.bind(on_dismiss=self._close_dropdown)
         self._update_dropdown()
