@@ -12,7 +12,8 @@ import json
 import logging
 from functools import wraps
 from configparser import ConfigParser
-from os.path import dirname, join, isdir
+from os.path import dirname, join, isdir, expanduser
+from threading import Thread
 
 
 if not os.environ.get('KIVY_DOC_INCLUDE', None):
@@ -29,6 +30,8 @@ from kivy.base import ExceptionManager, ExceptionHandler
 from kivy.app import App
 from kivy.logger import Logger
 from kivy.clock import Clock
+
+from plyer import filechooser
 
 import base_kivy_app.graphics  # required to load kv
 from base_kivy_app.utils import ColorTheme
@@ -284,6 +287,36 @@ class BaseKivyApp(App):
         be shown.
         '''
         return True
+
+    def open_filechooser(
+            self, callback, target=expanduser('~'), dirselect=False,
+            multiselect=False, mode='open', title='', filters=()):
+        def _callback(paths):
+            def _inner_callback(*largs):
+                callback(paths)
+                self.root.disabled = False
+            Clock.schedule_once(_inner_callback)
+
+        def run_thread():
+            if dirselect:
+                filechooser.choose_dir(
+                    path=target, multiple=multiselect,
+                    title=title or 'Pick a directory...',
+                    on_selection=_callback, filters=filters)
+            elif mode == 'open':
+                filechooser.open_file(
+                    path=target, multiple=multiselect,
+                    title=title or 'Pick a file...', on_selection=_callback,
+                    filters=filters)
+            else:
+                filechooser.save_file(
+                    path=target, multiple=multiselect,
+                    title=title or 'Pick a file...', on_selection=_callback,
+                    filters=filters)
+
+        self.root.disabled = True
+        thread = Thread(target=run_thread)
+        thread.start()
 
     def handle_exception(self, msg, exc_info=None, level='error', *largs):
         '''Should be called whenever an exception is caught in the app.

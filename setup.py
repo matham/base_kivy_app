@@ -34,7 +34,8 @@ setup(
     ],
     packages=find_packages(),
     install_requires=[
-        'ruamel.yaml', 'kivy', 'kivy_garden.filebrowser~=1.1.2'],
+        'ruamel.yaml', 'kivy', 'kivy_garden.filebrowser~=1.1.2', 'plyer',
+        'pywin32; sys_platform == "win32"'],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
                 'coveralls'],
