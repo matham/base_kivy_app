@@ -72,7 +72,7 @@ def report_exception_in_app(e, exc_info=None, threaded=False):
         report_exception()
 
 
-def app_error(app_error_func, threaded=False):
+def app_error(app_error_func=None, threaded=False):
     """A decorator which wraps the function in `try...except` and calls
     :meth:`BaseKivyApp.handle_exception` when a exception is raised.
 
@@ -82,26 +82,30 @@ def app_error(app_error_func, threaded=False):
         def do_something():
             do_something
     """
-    @wraps(app_error_func)
-    def safe_func(*largs, **kwargs):
-        try:
-            return app_error_func(*largs, **kwargs)
-        except Exception as e:
-            exc_info = sys.exc_info()
-            stack = traceback.extract_stack()
-            tb = traceback.extract_tb(exc_info[2])
-            full_tb = stack[:-1] + tb
-            exc_line = traceback.format_exception_only(*exc_info[:2])
+    def inner_decorator(f):
+        @wraps(f)
+        def safe_func(*largs, **kwargs):
+            try:
+                return f(*largs, **kwargs)
+            except Exception as e:
+                exc_info = sys.exc_info()
+                stack = traceback.extract_stack()
+                tb = traceback.extract_tb(exc_info[2])
+                full_tb = stack[:-1] + tb
+                exc_line = traceback.format_exception_only(*exc_info[:2])
 
-            err = 'Traceback (most recent call last):'
-            err += "".join(traceback.format_list(full_tb))
-            err += "".join(exc_line)
-            report_exception_in_app(e, exc_info=err, threaded=threaded)
+                err = 'Traceback (most recent call last):'
+                err += "".join(traceback.format_list(full_tb))
+                err += "".join(exc_line)
+                report_exception_in_app(e, exc_info=err, threaded=threaded)
+        return safe_func
 
-    return safe_func
+    if app_error_func is None:
+        return inner_decorator
+    return inner_decorator(app_error_func)
 
 
-def app_error_async(app_error_func, threaded=False):
+def app_error_async(app_error_func=None, threaded=False):
     """A decorator which wraps the async function in `try...except` and calls
     :meth:`BaseKivyApp.handle_exception` when a exception is raised.
 
@@ -111,23 +115,27 @@ def app_error_async(app_error_func, threaded=False):
         async def do_something():
             do_something
     """
-    @wraps(app_error_func)
-    async def safe_func(*largs, **kwargs):
-        try:
-            return await app_error_func(*largs, **kwargs)
-        except Exception as e:
-            exc_info = sys.exc_info()
-            stack = traceback.extract_stack()
-            tb = traceback.extract_tb(exc_info[2])
-            full_tb = stack[:-1] + tb
-            exc_line = traceback.format_exception_only(*exc_info[:2])
+    def inner_decorator(f):
+        @wraps(f)
+        async def safe_func(*largs, **kwargs):
+            try:
+                return await f(*largs, **kwargs)
+            except Exception as e:
+                exc_info = sys.exc_info()
+                stack = traceback.extract_stack()
+                tb = traceback.extract_tb(exc_info[2])
+                full_tb = stack[:-1] + tb
+                exc_line = traceback.format_exception_only(*exc_info[:2])
 
-            err = 'Traceback (most recent call last):'
-            err += "".join(traceback.format_list(full_tb))
-            err += "".join(exc_line)
-            report_exception_in_app(e, exc_info=err, threaded=threaded)
+                err = 'Traceback (most recent call last):'
+                err += "".join(traceback.format_list(full_tb))
+                err += "".join(exc_line)
+                report_exception_in_app(e, exc_info=err, threaded=threaded)
+        return safe_func
 
-    return safe_func
+    if app_error_func is None:
+        return inner_decorator
+    return inner_decorator(app_error_func)
 
 
 class BaseKivyApp(App):
