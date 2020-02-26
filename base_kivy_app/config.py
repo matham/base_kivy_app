@@ -73,9 +73,10 @@ from collections import deque
 from kivy.properties import Property
 from base_kivy_app.utils import yaml_loads, yaml_dumps
 
-__all__ = ('read_config_from_object', 'read_config_from_file', 'apply_config',
-           'dump_config', 'create_doc_listener',
-           'get_config_attrs_doc', 'write_config_attrs_rst')
+__all__ = (
+    'read_config_from_object', 'read_config_from_file', 'apply_config',
+    'dump_config', 'get_class_config_props_names', 'create_doc_listener',
+    'get_config_attrs_doc', 'write_config_attrs_rst')
 
 config_list_pat = re.compile(
     '\\[\\s+([^",\\]\\s{}]+,\\s+)*[^",\\]\\s{}]+\\s+\\]')
@@ -91,11 +92,12 @@ def _get_bases(cls):
         yield base
 
 
-def _get_settings_attrs(cls):
+def get_class_config_props_names(cls):
     """Returns a list of configurable properties of the class.
 
-    :param cls:
-    :return:
+    :param cls: The class to inspect.
+    :return: list of properties listed in ``__config_props__`` for the class
+        and its bases.
     """
     attrs = []
     for c in [cls] + list(_get_bases(cls)):
@@ -167,14 +169,14 @@ def read_config_from_object(obj, get_props_only=False):
                 return config
 
     if isclass(obj):
-        for attr in _get_settings_attrs(obj):
+        for attr in get_class_config_props_names(obj):
             prop_val = getattr(obj, attr)
             if isinstance(prop_val, Property):
                 config[attr] = prop_val.defaultvalue
             else:
                 config[attr] = prop_val
     else:
-        props = _get_settings_attrs(obj.__class__)
+        props = get_class_config_props_names(obj.__class__)
         if hasattr(obj, 'get_config_properties'):
             config.update(obj.get_config_properties())
 
@@ -358,7 +360,7 @@ def get_config_attrs_doc(obj, filename='config_attrs.json'):
     # get the modules associated with each of the classes
     for _, _, obj, classes_props, _ in classes_flat:
         cls = obj if isclass(obj) else obj.__class__
-        if not _get_settings_attrs(cls):
+        if not get_class_config_props_names(cls):
             continue
 
         # get all the parent classes of the class and their props
