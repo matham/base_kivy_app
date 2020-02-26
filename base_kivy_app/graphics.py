@@ -441,7 +441,7 @@ class BufferImage(Scatter):
     that was passed in.
     '''
 
-    img_texture = ObjectProperty(None)
+    img_texture = ObjectProperty(None, allownone=True)
     '''The texture into which the images are blitted. Defaults to None. '''
 
     color = ListProperty([1, 1, 1, 1])
@@ -613,6 +613,14 @@ class BufferImage(Scatter):
         factor = abs(int(round(rotation / 90))) % 4
         self.rotation = math.copysign(factor * 90, rotation)
         self.reload_buffer()
+
+    def clear_image(self):
+        self.canvas.remove_group(str(self) + 'image_display')
+        self.img_texture = None
+        self.texture_size = 0, 0
+        self._fmt = ''
+        self.img = None
+        self.canvas.ask_update()
 
 
 class ErrorIndicatorBehavior(ButtonBehavior):
