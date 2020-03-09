@@ -114,6 +114,13 @@ def get_class_config_props_names(cls):
     return attrs
 
 
+def _get_property_default_value(cls, attr):
+    prop = getattr(cls, attr)
+    if isinstance(prop, Property):
+        return prop.defaultvalue
+    return prop
+
+
 def _get_classes_settings_attrs(cls):
     """Returns a dictionary of parent classes that maps class names to a dict
     of properties and their info.
@@ -131,7 +138,7 @@ def _get_classes_settings_attrs(cls):
                 raise Exception('Missing attribute <{}> in <{}>'.
                                 format(attr, cls.__name__))
         attrs['{}.{}'.format(c.__module__, c.__name__)] = {
-            attr: [getattr(c, attr).defaultvalue, None]
+            attr: [_get_property_default_value(c, attr), None]
             for attr in c.__config_props__}
     return attrs
 
