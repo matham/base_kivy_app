@@ -66,4 +66,4 @@ html_static_path = ['_static']
 def setup(app):
     yaml_filename = os.environ.get(
         'TREE_CONFIG_DOC_YAML_PATH', 'config_prop_docs.yaml')
-    create_doc_listener(app, 'BaseKivyApp', yaml_filename)
+    create_doc_listener(app, 'base_kivy_app', yaml_filename)

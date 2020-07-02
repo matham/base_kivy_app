@@ -1,3 +1,8 @@
+"""Configuration
+==================
+
+"""
+
 from functools import partial
 from tree_config import Configurable, read_config_from_object, apply_config, \
     read_config_from_file, load_config as \
