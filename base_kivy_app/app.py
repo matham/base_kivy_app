@@ -313,8 +313,12 @@ class BaseKivyApp(App):
                     filters=filters)
 
         self.root.disabled = True
-        thread = Thread(target=run_thread)
-        thread.start()
+        if sys.platform == 'darwin':
+            filters = ()
+            run_thread()
+        else:
+            thread = Thread(target=run_thread)
+            thread.start()
 
     def handle_exception(self, msg, exc_info=None, level='error', *largs):
         '''Should be called whenever an exception is caught in the app.
