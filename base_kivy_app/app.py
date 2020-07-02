@@ -14,6 +14,8 @@ from functools import wraps
 from configparser import ConfigParser
 from os.path import dirname, join, isdir, expanduser
 from threading import Thread
+from base_kivy_app.config import apply_config, read_config_from_file, \
+    read_config_from_object, dump_config
 
 
 if not os.environ.get('KIVY_DOC_INCLUDE', None):
@@ -35,8 +37,6 @@ from plyer import filechooser
 
 import base_kivy_app.graphics  # required to load kv
 from base_kivy_app.utils import ColorTheme
-from base_kivy_app.config import apply_config, read_config_from_file, \
-    read_config_from_object, dump_config
 if not os.environ.get('KIVY_DOC_INCLUDE', None):
     Clock.max_iteration = 20
 
@@ -142,7 +142,7 @@ class BaseKivyApp(App):
     '''The base app.
     '''
 
-    __config_props__ = ('inspect', )
+    _config_props_ = ('inspect', )
 
     json_config_path = StringProperty('config.yaml')
     '''The full path to the config file used for the app.
@@ -151,13 +151,13 @@ class BaseKivyApp(App):
     '''
 
     app_settings = ObjectProperty({})
-    '''A dict that contains the :mod:`base_kivy_app.config` settings for the
+    '''A dict that contains the :mod:`tree-config` settings for the
     app for all the configurable classes. See that module for details.
 
     The keys in the dict are configuration names for a class and its
     values are dicts whose keys are class attributes names and values are their
-    values. These attributes are the ones listed in ``__config_props__``. See
-    :mod:`base_kivy_app.config` for how configuration works.
+    values. These attributes are the ones listed in ``_config_props_``. See
+    :mod:`tree-config` for how configuration works.
     '''
 
     inspect = BooleanProperty(False)
@@ -190,15 +190,6 @@ class BaseKivyApp(App):
     def on__close_message(self, *largs):
         if self._close_popup is not None:
             self._close_popup.text = self._close_message
-
-    @classmethod
-    def get_config_classes(cls):
-        '''It returns all the configurable classes of the app.
-        '''
-        return {'app': cls}
-
-    def get_config_instances(self):
-        return {'app': self}
 
     def __init__(self, **kw):
         self.theme = ColorTheme()
@@ -265,7 +256,6 @@ class BaseKivyApp(App):
     def load_app_settings_from_file(self):
         self.app_settings = read_config_from_file(
             self.ensure_config_file(self.json_config_path))
-        apply_config(self, self.app_settings, set_props_only=True)
 
     def apply_app_settings(self):
         apply_config(self, self.app_settings)

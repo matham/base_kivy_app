@@ -103,9 +103,12 @@ jobs:
         python3 -m pip install kivy[base] --pre --extra-index-url https://kivy.org/downloads/simple/
         python3 -m pip install -e .[dev]
     - name: Generate docs
+      env:
+        TREE_CONFIG_DOC_YAML_PATH: config_prop_docs.yaml
       run: |
         cd doc
         make html
+        cp $TREE_CONFIG_DOC_YAML_PATH build/html
     - name: gh-pages upload
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       env:
