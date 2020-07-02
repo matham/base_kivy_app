@@ -89,6 +89,7 @@ def represent_property(representer, data: Property):
 
 def get_yaml():
     yaml = orig_get_yaml()
+    yaml.default_flow_style = False
 
     yaml.representer.add_multi_representer(
         ObservableList, yaml.representer.__class__.represent_list)
