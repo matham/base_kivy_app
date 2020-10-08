@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.7
+    - name: Set up Python 3.x
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7
+        python-version: 3.x
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools
@@ -45,7 +45,7 @@ jobs:
     - name: Make wheel
       run: python3 setup.py bdist_wheel --universal
     - name: Upload wheels as artifact
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v2
       with:
         name: wheels
         path: dist
@@ -76,10 +76,10 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.7
+    - name: Set up Python 3.x
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7
+        python-version: 3.x
     - name: Install dependencies
       env:
         KIVY_GL_BACKEND: angle_sdl2
@@ -97,10 +97,10 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.7
+    - name: Set up Python 3.x
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7
+        python-version: 3.x
     - name: Install dependencies
       env:
           KIVY_DOC_INCLUDE: 1
@@ -108,12 +108,15 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools sphinx
         python3 -m pip install kivy[base] --pre --extra-index-url https://kivy.org/downloads/simple/
+
         python3 -m pip install -e .[dev]
     - name: Generate docs
       env:
         TREE_CONFIG_DOC_YAML_PATH: config_prop_docs.yaml
       run: |
         cd doc
+        python -m tree_config.doc_gen download -u "https://matham.github.io/more_kivy_app/$TREE_CONFIG_DOC_YAML_PATH" -o $TREE_CONFIG_DOC_YAML_PATH
+
         make html
         cp $TREE_CONFIG_DOC_YAML_PATH build/html
     - name: gh-pages upload

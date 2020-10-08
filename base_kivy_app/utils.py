@@ -1,21 +1,16 @@
-'''Utilities
+"""Utilities
 =============
-'''
+"""
 from kivy.utils import get_color_from_hex
-from kivy.properties import StringProperty, ObservableDict, ObservableList, \
-    Property
+from kivy.properties import StringProperty
 from kivy.factory import Factory
 from kivy.event import EventDispatcher
-from kivy.weakproxy import WeakProxy
-from functools import partial
 import json
-from io import StringIO
-from tree_config.utils import yaml_loads, get_yaml as orig_get_yaml, \
-    yaml_dumps as orig_yaml_dumps
+from more_kivy_app.utils import get_yaml, yaml_dumps, yaml_loads
 
-__all__ = ('pretty_time', 'pretty_space', 'json_dumps',
-           'json_loads', 'ColorTheme', 'apply_args_post', 'yaml_dumps',
-           'yaml_loads')
+__all__ = (
+    'pretty_time', 'pretty_space', 'ColorTheme', 'apply_args_post',
+    'yaml_dumps', 'yaml_loads', 'get_yaml')
 
 
 def pretty_time(seconds):
@@ -73,34 +68,6 @@ def pretty_space(space, is_rate=False):
             return "%3.2f %s%s" % (space, x, t)
         space /= 1024.0
     return "%3.2f %s%s" % (space, 'TB', t)
-
-
-def json_dumps(value):
-    return json.dumps(value, sort_keys=True, indent=4, separators=(',', ': '))
-
-
-def json_loads(value):
-    return json.loads(value)
-
-
-def represent_property(representer, data: Property):
-    return representer.represent_data(data.defaultvalue)
-
-
-def get_yaml():
-    yaml = orig_get_yaml()
-    yaml.default_flow_style = False
-
-    yaml.representer.add_multi_representer(
-        ObservableList, yaml.representer.__class__.represent_list)
-    yaml.representer.add_multi_representer(
-        ObservableDict, yaml.representer.__class__.represent_dict)
-
-    yaml.representer.add_multi_representer(Property, represent_property)
-    return yaml
-
-
-yaml_dumps = partial(orig_yaml_dumps, get_yaml_obj=get_yaml)
 
 
 class ColorTheme(EventDispatcher):
