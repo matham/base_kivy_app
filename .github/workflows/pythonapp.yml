@@ -115,7 +115,7 @@ jobs:
         TREE_CONFIG_DOC_YAML_PATH: config_prop_docs.yaml
       run: |
         cd doc
-        python -m tree_config.doc_gen download -u "https://matham.github.io/more_kivy_app/$TREE_CONFIG_DOC_YAML_PATH" -o $TREE_CONFIG_DOC_YAML_PATH
+        python -m tree_config.doc_gen download -u "https://matham.github.io/more-kivy-app/$TREE_CONFIG_DOC_YAML_PATH" -o $TREE_CONFIG_DOC_YAML_PATH
 
         make html
         cp $TREE_CONFIG_DOC_YAML_PATH build/html
