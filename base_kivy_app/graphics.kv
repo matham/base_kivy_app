@@ -306,13 +306,10 @@
             width: 1
             points: [self.x, self.y, self.x + self.width, self.y, self.x + self.width, self.y + self.height, self.x, self.y + self.height, self.x, self.y]
 
-<FlatSpinnerButton@FlatButton>:
-    size_hint_y: None
-    height: self.texture_size[1]
-    size_hint_min_x: self.texture_size[0]
+<FlatSpinnerButton@SpinnerBehavior+FlatButton>:
+    size_hint_min: self.texture_size
     center_texture: False
 
-<FlatSpinnerButton@SpinnerBehavior+FlatButton>
 <FlatSpinner@BoxLayout>:
     flat_color: [1, 1, 1, 1]
     flat_menu_color: [1, 1, 1, 1]
@@ -322,6 +319,7 @@
     text_autoupdate: False
     values: []
     text: ''
+    bold: False
     spinner: spinner
     FlatSpinnerButton:
         id: spinner
@@ -332,9 +330,8 @@
         on_text: root.text = self.text
         flat_color: root.flat_color
         scale_down_color: True
-        size_hint_x: None
-        width: self.minimum_size[0]
         padding_x: '5dp'
+        bold: root.bold
         dropdown_cls: apply_args_post(Factory.FlatDropDown, flat_color=root.flat_drop_background_color, flat_border_color=root.flat_border_color)
         option_cls: lambda *l, **kw: Factory.FlatSpinnerButton(*l, flat_color=root.flat_drop_text_color, **kw)
     FlatImageButton:
@@ -348,6 +345,9 @@
         flat_color: root.flat_menu_color
         scale_down_color: True
         source: 'flat_menu_down.png'
+        size_hint_y: None
+        height: '34dp'
+
 
 
 <-FlatTextInput>:
