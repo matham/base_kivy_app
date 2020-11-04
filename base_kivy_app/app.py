@@ -97,29 +97,33 @@ class BaseKivyApp(MoreKivyApp):
         def _callback(paths):
             def _inner_callback(*largs):
                 callback(paths)
-                self.root.disabled = False
             Clock.schedule_once(_inner_callback)
 
+        def re_enable(*args):
+            self.root.disabled = False
+
         def run_thread():
-            if dirselect:
-                filechooser.choose_dir(
-                    path=target, multiple=multiselect,
-                    title=title or 'Pick a directory...',
-                    on_selection=_callback, filters=filters)
-            elif mode == 'open':
-                filechooser.open_file(
-                    path=target, multiple=multiselect,
-                    title=title or 'Pick a file...', on_selection=_callback,
-                    filters=filters)
-            else:
-                filechooser.save_file(
-                    path=target, multiple=multiselect,
-                    title=title or 'Pick a file...', on_selection=_callback,
-                    filters=filters)
+            try:
+                if dirselect:
+                    filechooser.choose_dir(
+                        path=target, multiple=multiselect,
+                        title=title or 'Pick a directory...',
+                        on_selection=_callback, filters=filters)
+                elif mode == 'open':
+                    filechooser.open_file(
+                        path=target, multiple=multiselect,
+                        title=title or 'Pick a file...',
+                        on_selection=_callback, filters=filters)
+                else:
+                    filechooser.save_file(
+                        path=target, multiple=multiselect,
+                        title=title or 'Pick a file...',
+                        on_selection=_callback, filters=filters)
+            finally:
+                Clock.schedule_once(re_enable)
 
         self.root.disabled = True
         if sys.platform == 'darwin':
-            filters = ()
             run_thread()
         else:
             thread = Thread(target=run_thread)
