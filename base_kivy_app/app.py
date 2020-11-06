@@ -124,6 +124,7 @@ class BaseKivyApp(MoreKivyApp):
 
         self.root.disabled = True
         if sys.platform == 'darwin':
+            filters = ()
             run_thread()
         else:
             thread = Thread(target=run_thread)
