@@ -39,7 +39,7 @@ class BaseKivyApp(MoreKivyApp):
     error_indicator = ObjectProperty(None)
     '''The error indicator that gets the error reports. The app GUI
     should set :attr:`error_indicator` to the
-    :class:`BaseKivyApp.graphics.ErrorIndicatorBase` instance used in the app
+    :class:`BaseKivyApp.graphics.ErrorIndicator` instance used in the app
     abd it will be used to diplay errors and warnings.
     '''
 
@@ -65,8 +65,6 @@ class BaseKivyApp(MoreKivyApp):
         resource_add_path(join(dirname(__file__), 'media', 'flat_icons'))
 
     def build_default_widgets(self):
-        import kivy_garden.filebrowser
-        self.filebrowser = Factory.PopupBrowser()
         self._close_popup = Factory.ClosePopup()
 
     def init_load(self):
@@ -129,11 +127,3 @@ class BaseKivyApp(MoreKivyApp):
         else:
             thread = Thread(target=run_thread)
             thread.start()
-
-    def handle_exception(self, msg, *args, **kwargs):
-        super().handle_exception(msg, *args, **kwargs)
-        error_indicator = self.error_indicator
-        if not error_indicator:
-            return
-
-        error_indicator.add_item('{}'.format(msg))

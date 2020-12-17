@@ -37,7 +37,7 @@ from kivy.uix.slider import Slider
 from base_kivy_app.utils import pretty_time
 
 __all__ = (
-    'EventFocusBehavior', 'BufferImage', 'ErrorIndicatorBase', 'TimeLineSlice',
+    'EventFocusBehavior', 'BufferImage', 'TimeLineSlice',
     'TimeLine', 'AutoSizedSpinner', 'EmptyDropDown', 'HighightButtonBehavior')
 
 
@@ -687,10 +687,6 @@ class ErrorIndicatorBehavior(ButtonBehavior):
 
     def on_log_event(self, *largs):
         pass
-
-
-class ErrorIndicatorBase(ErrorIndicatorBehavior, Widget):
-    pass
 
 
 class TimeLineSlice(Widget):

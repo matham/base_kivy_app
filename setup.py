@@ -34,7 +34,7 @@ setup(
     ],
     packages=find_packages(),
     install_requires=[
-        'ruamel.yaml', 'kivy', 'kivy_garden.filebrowser~=1.1.2', 'plyer',
+        'ruamel.yaml', 'kivy', 'plyer',
         'pywin32; sys_platform == "win32"',
         'pyobjus; sys_platform == "darwin"', 'tree-config', 'more-kivy-app'],
     extras_require={

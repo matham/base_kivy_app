@@ -30,29 +30,46 @@
                 on_release: root.dismiss()
 
 
-<CallbackPopup@DragBehavior+Popup>:
+<-CallbackPopup@Popup>:
     size_hint: (None, None)
     size: (min(self.parent.width, 800), min(self.parent.height, 600)) if self.parent else (100, 100)
-
-<PopupBrowser@CallbackPopup>:
-    target: expanduser('~')
-    dirselect: False
-    multiselect: False
-    callback: None
-    filename: ''
-    FileBrowser:
-        id: file_browser
-        dirselect: root.dirselect
-        multiselect: root.multiselect
-        selection: [root.filename] if root.filename else []
-        path: root.target or expanduser('~')
-        on_success:
-            if self.selection or self.filename: root.dismiss()
-            if root.callback: root.callback(self.path, self.selection, self.filename)
-        on_submit:
-            root.dismiss()
-            if root.callback: root.callback(self.path, self.selection, self.filename)
-        on_cancel_state: root.dismiss()
+    _container: container
+    canvas:
+        Color:
+            rgba: app.theme.primary_text
+        Rectangle:
+            size: self.size
+            pos: self.pos
+        Color:
+            rgba: app.theme.divider
+        Line:
+            width: 1
+            points: [self.x, self.y, self.x + self.width, self.y, self.x + self.width, self.y + self.height, self.x, self.y + self.height, self.x, self.y]
+    GridLayout:
+        padding: '12dp'
+        cols: 1
+        size_hint: None, None
+        pos: root.pos
+        size: root.size
+        FlatLabel:
+            text: root.title
+            center_texture: True
+            flat_color: app.theme.text_primary
+            size_hint_y: None
+            height: self.texture_size[1] + dp(16)
+            text_size: self.width - dp(16), None
+            halign: root.title_align
+        Widget:
+            size_hint_y: None
+            height: dp(4)
+            canvas:
+                Color:
+                    rgba: app.theme.accent
+                Rectangle:
+                    pos: self.x, self.y + root.separator_height / 2.
+                    size: self.width, root.separator_height
+        BoxLayout:
+            id: container
 
 
 <ErrorLabel@BoxLayout>:
@@ -60,26 +77,24 @@
     height: label.texture_size[1]
     text: ''
     icon_name: 'error'
-    Label:
+    ThemedLabel:
         id: label
         text_size: self.width, None
         padding: '5dp', '5dp'
         text: root.text
-        canvas.before:
-            Color:
-                rgba: .2, .2, .2, 1
-            Rectangle:
-                size: self.texture_size
-                pos: self.pos
-    ImageButton:
-        size_hint: None, None
-        width: min(dp(32), label.height)
-        height: min(dp(32), label.height)
+    FlatImage:
+        flat_color: app.theme.accent
         source: '{}.png'.format(root.icon_name)
+        auto_size_width: False
+        size_hint_x: None
+        width: self.texture_size[0]
+
 
 <ErrorLogContainer@RecycleView>:
     bar_width: '15dp'
     viewclass: 'ErrorLabel'
+    scroll_type: ['bars']
+    bar_width: '15dp'
     RecycleBoxLayout:
         orientation: 'vertical'
         padding: '15dp'
@@ -106,7 +121,9 @@
         FloatLayout:
             size_hint_y: None
             height: close.texture_size[1]
-            Button:
+            FlatButton:
+                flat_color: app.theme.text_primary
+                flat_background_color: app.theme.accent
                 id: close
                 text: 'Close'
                 on_release: root.dismiss()
@@ -121,19 +138,6 @@
         self._anim.cancel(self)
         self._alpha = 1
         self._level = 'ok'
-
-<ErrorIndicatorBase>:
-    background_normal: '{}.png'.format(root._level)
-    background_down: '{}_down.png'.format(root._level)
-    background_color: 1, 1, 1, root._alpha
-
-
-<ErrorIndicatorPopup@ErrorIndicatorBase>:
-    on_release: self._display.open()
-    display_cls: 'ErrorLog'
-    on_parent:
-        self._display = Factory.get(self.display_cls)(title='Error Log')
-        self._container = self._display.container
 
 
 <ImageButton@ButtonBehavior+Image>:
