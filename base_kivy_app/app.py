@@ -92,6 +92,9 @@ class BaseKivyApp(MoreKivyApp):
     def open_filechooser(
             self, callback, target=expanduser('~'), dirselect=False,
             multiselect=False, mode='open', title='', filters=()):
+        if not os.path.exists(target):
+            target = expanduser('~')
+
         def _callback(paths):
             def _inner_callback(*largs):
                 callback(paths)

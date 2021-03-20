@@ -36,7 +36,8 @@ setup(
     install_requires=[
         'ruamel.yaml', 'kivy', 'plyer',
         'pywin32; sys_platform == "win32"',
-        'pyobjus; sys_platform == "darwin"', 'tree-config', 'more-kivy-app'],
+        'pyobjus; sys_platform == "darwin"', 'tree-config',
+        'more-kivy-app~=0.1.1'],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
                 'coveralls'],
