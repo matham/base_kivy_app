@@ -594,3 +594,13 @@
     scale_down_color: True
     flat_color: app.theme.text_primary
     flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
+
+<AccentThemedToggleButton@FlatToggleButton>:
+    scale_down_color: False
+    flat_color: app.theme.primary_text if self.state == 'down' else app.theme.text_primary
+    flat_background_color: app.theme.accent if self.state == 'down' else app.theme.accent_light
+
+<AccentThemedButton@FlatButton>:
+    scale_down_color: False
+    flat_color: app.theme.primary_text if self.state == 'down' else app.theme.text_primary
+    flat_background_color: app.theme.accent if self.state == 'down' else app.theme.accent_light

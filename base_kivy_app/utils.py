@@ -86,6 +86,8 @@ class ColorTheme(EventDispatcher):
 
     accent = StringProperty(get_color_from_hex('536DFEFF'))
 
+    accent_light = StringProperty(get_color_from_hex('E6E9FFFF'))
+
     text_primary = StringProperty(get_color_from_hex('212121FF'))
 
     text_secondary = StringProperty(get_color_from_hex('757575FF'))
