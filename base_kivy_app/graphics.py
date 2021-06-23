@@ -109,6 +109,7 @@ class FollowingLabel(Label):
         Window.add_widget(self)
         widget.fbind('center', self._reposition)
         self.fbind('size', self._reposition)
+        self._reposition()
 
     def hide_label(self):
         Window.remove_widget(self)
@@ -123,7 +124,7 @@ class FollowingLabel(Label):
         wx, wy = widget.to_window(*widget.pos)
         _, wtop = widget.to_window(widget.right, widget.top)
 
-        # ensure the dropdown list doesn't get out on the X axis, with a
+        # ensure it doesn't get out on the X axis, with a
         # preference to 0 in case the list is too wide.
         x = wx
         if x + self.width > win.width:
@@ -132,13 +133,13 @@ class FollowingLabel(Label):
             x = 0
         self.x = x
 
-        # determine if we display the dropdown upper or lower to the widget
+        # determine if we display upper or lower to the widget
         height = self.height
 
         h_bottom = wy - height
         h_top = win.height - (wtop + height)
         if h_bottom > 0:
-            self.top = wy
+            self.y = h_bottom
         elif h_top > 0:
             self.y = wtop
         else:
@@ -231,14 +232,15 @@ class HighightButtonBehavior(object):
     def track_mouse(instance, pos):
         widget = HighightButtonBehavior.attached_widget
         if widget:
-            if widget.collide_point(*widget.to_widget(*pos)):
+            if widget.collide_point(*widget.to_parent(*widget.to_widget(*pos))):
                 return
             else:
                 widget.detach_widget()
 
         for widget in HighightButtonBehavior.tracked_widgets:
             try:
-                if widget.collide_point(*widget.to_widget(*pos)):
+                if widget.collide_point(
+                        *widget.to_parent(*widget.to_widget(*pos))):
                     widget.attach_widget()
                     break
             except ReferenceError:
