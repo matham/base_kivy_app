@@ -13,7 +13,7 @@ __all__ = (
     'yaml_dumps', 'yaml_loads', 'get_yaml')
 
 
-def pretty_time(seconds):
+def pretty_time(seconds, pad=False):
     '''Returns a nice representation of a time value.
 
     :Parameters:
@@ -33,6 +33,14 @@ def pretty_time(seconds):
     s, ms = divmod(seconds, 10)
     m, s = divmod(s, 60)
     h, m = divmod(m, 60)
+    if pad:
+        if h:
+            return '{0:0>2d}:{1:0>2d}:{2:0>2d}.{3:d}'.format(h, m, s, ms)
+        elif m:
+            return '00:{0:0>2d}:{1:0>2d}.{2:d}'.format(m, s, ms)
+        else:
+            return '00:00:{0:0>2d}.{1:d}'.format(s, ms)
+
     if h:
         return '{0:d}:{1:d}:{2:d}.{3:d}'.format(h, m, s, ms)
     elif m:
