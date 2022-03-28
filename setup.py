@@ -40,7 +40,7 @@ setup(
         'more-kivy-app'],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
-                'coveralls'],
+                'coveralls', 'sphinx'],
     },
     package_data={
         'base_kivy_app':
