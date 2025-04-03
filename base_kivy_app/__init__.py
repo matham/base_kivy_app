@@ -9,7 +9,7 @@ import pathlib
 
 __all__ = ('get_pyinstaller_datas', )
 
-__version__ = '0.1.3'
+__version__ = '0.1.4.dev0'
 
 
 def get_pyinstaller_datas():
