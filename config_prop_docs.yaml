@@ -1,0 +1,5 @@
+more_kivy_app.app.MoreKivyApp:
+  inspect:
+  - Enables GUI inspection. If True, it is activated by hitting ctrl-e in
+  - the GUI.
+  - ''
