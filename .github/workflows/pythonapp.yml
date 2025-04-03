@@ -6,9 +6,9 @@ jobs:
   lint_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4.2.2
     - name: Set up Python 3.x
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5.5.0
       with:
         python-version: 3.x
     - name: Install dependencies
@@ -24,9 +24,9 @@ jobs:
     env:
       DISPLAY: :99.0
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4.2.2
     - name: Set up Python 3.x
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5.5.0
       with:
         python-version: 3.x
     - name: Make sdist/wheel
@@ -41,12 +41,12 @@ jobs:
     - name: Install project
       run: python3 -m pip install -e .[dev]
     - name: Upload wheels as artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: wheels
         path: dist
     - name: Upload to GitHub Release
-      uses: softprops/action-gh-release@v0.1.14
+      uses: softprops/action-gh-release@v2.2.1
       if: startsWith(github.ref, 'refs/tags/')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -71,9 +71,9 @@ jobs:
   windows_test:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4.2.2
     - name: Set up Python 3.x
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5.5.0
       with:
         python-version: 3.x
     - name: Install dependencies
@@ -89,9 +89,9 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4.2.2
     - name: Set up Python 3.x
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5.5.0
       with:
         python-version: 3.x
     - name: Install dependencies
